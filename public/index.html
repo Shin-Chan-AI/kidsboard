@@ -38,26 +38,10 @@
   </div>
 
   <main class="max-w-7xl mx-auto px-4 space-y-4">
-    <!-- AI 조언 섹션 -->
-    <div id="ai-advice-container" class="hidden">
-      <div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-0.5 shadow-lg">
-        <div class="bg-white rounded-[14px] p-5 flex items-start gap-4">
-          <div class="bg-indigo-100 p-3 rounded-2xl text-2xl flex-shrink-0">🤖</div>
-          <div class="flex-1">
-            <div class="flex items-center justify-between mb-1">
-              <h3 id="ai-advice-name" class="text-sm font-bold text-indigo-600">아이별 맞춤 가이드</h3>
-              <span class="text-[10px] font-bold bg-indigo-50 text-indigo-400 px-2 py-0.5 rounded-full uppercase tracking-wider">AI Powered</span>
-            </div>
-            <p id="ai-advice-text" class="text-sm text-gray-700 leading-relaxed italic font-medium">조언을 불러오는 중입니다...</p>
-          </div>
-        </div>
-      </div>
-    </div>
-    
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
       
       <!-- 시간표 -->
-      <div class="card bg-white rounded-2xl shadow p-5 lg:col-span-2">
+      <div class="card bg-white rounded-2xl shadow p-5 lg:col-span-2 border-t-4 border-blue-500">
         <div class="flex justify-between items-center mb-4">
           <h2 class="text-base font-bold text-gray-800">📅 주간 스케줄</h2>
           <button onclick="openModal('schedule')" class="text-xs font-bold text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 rounded-full transition">+ 추가</button>
@@ -98,20 +82,18 @@
 
       <!-- 뉴스 (가장 아래) -->
       <div class="lg:col-span-3">
-        <div class="card bg-white rounded-2xl shadow p-5">
+        <div class="card bg-white rounded-2xl shadow p-5 border-t-4 border-pink-500">
           <div class="flex items-center justify-between mb-5">
             <div class="flex items-center gap-2">
               <h2 class="text-base font-bold text-gray-800">📰 교육 뉴스</h2>
               <button onclick="refreshNews()" id="news-refresh-btn" class="p-1 hover:bg-gray-100 rounded-full transition text-gray-400">
                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
               </button>
+              <button onclick="openKeywordModal()" class="p-1 hover:bg-gray-100 rounded-full transition text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+              </button>
             </div>
-            <div class="flex gap-1 overflow-x-auto pb-1 no-scrollbar">
-              <button onclick="filterNews('')" class="text-[10px] px-2 py-1 bg-indigo-100 text-indigo-600 rounded-full news-filter active" data-tag="">전체</button>
-              <button onclick="filterNews('육아꿀팁')" class="text-[10px] px-2 py-1 bg-gray-100 text-gray-500 rounded-full news-filter" data-tag="육아꿀팁">육아꿀팁</button>
-              <button onclick="filterNews('학습법')" class="text-[10px] px-2 py-1 bg-gray-100 text-gray-500 rounded-full news-filter" data-tag="학습법">학습법</button>
-              <button onclick="filterNews('입시/정책')" class="text-[10px] px-2 py-1 bg-gray-100 text-gray-500 rounded-full news-filter" data-tag="입시/정책">입시/정책</button>
-            </div>
+
           </div>
           <div id="news-list" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
         </div>
@@ -150,11 +132,12 @@
     </div>
   </div>
 
-  <!-- 모달: 시간표 등록 -->
+  <!-- 모달: 시간표 등록/수정 -->
   <div id="modal-schedule" class="modal" onclick="if(event.target===this)closeModal('schedule')">
     <div class="modal-content">
-      <h3 class="text-xl font-bold mb-6">📅 스케줄 등록</h3>
+      <h3 id="schedule-modal-title" class="text-xl font-bold mb-6">📅 스케줄 등록</h3>
       <form id="form-schedule" class="space-y-4">
+        <input type="hidden" name="id" id="edit-schedule-id">
         <input type="text" name="title" placeholder="과목명/활동명" required class="w-full border p-3 rounded-xl outline-none focus:ring-2 focus:ring-indigo-100">
         <div>
           <label class="text-xs font-bold text-gray-400 block mb-2">요일 선택 (중복 가능)</label>
@@ -181,15 +164,54 @@
     </div>
   </div>
 
-  <!-- 기타 모달 생략(유사 구조) -->
+  <!-- 모달: 일정 등록/수정 -->
   <div id="modal-event" class="modal" onclick="if(event.target===this)closeModal('event')">
     <div class="modal-content">
-      <h3 class="text-xl font-bold mb-5">🗓️ 주요 일정 추가</h3>
+      <h3 id="event-modal-title" class="text-xl font-bold mb-5">🗓️ 주요 일정 추가</h3>
       <form id="form-event" class="space-y-4">
+        <input type="hidden" name="id" id="edit-event-id">
         <input type="text" name="title" placeholder="일정명" required class="w-full border p-3 rounded-xl outline-none">
         <input type="date" name="date" required id="event-date-input" class="w-full border p-3 rounded-xl outline-none">
         <textarea name="description" placeholder="상세 내용" class="w-full border p-3 rounded-xl outline-none" rows="3"></textarea>
         <button type="submit" class="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold">일정 저장</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 모달: 준비물 등록/수정 -->
+  <div id="modal-supply" class="modal" onclick="if(event.target===this)closeModal('supply')">
+    <div class="modal-content">
+      <h3 id="supply-modal-title" class="text-xl font-bold mb-5">🎒 준비물 추가</h3>
+      <form id="form-supply" class="space-y-4">
+        <input type="hidden" name="id" id="edit-supply-id">
+        <input type="text" name="item_name" placeholder="준비물명" required class="w-full border p-3 rounded-xl outline-none">
+        <select name="category" class="w-full border p-3 rounded-xl outline-none">
+          <option>교재</option><option>학용품</option><option>체육복</option><option>특별활동</option>
+        </select>
+        <input type="date" name="date" required id="supply-date-input" class="w-full border p-3 rounded-xl outline-none">
+        <button type="submit" class="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold">준비물 저장</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 모달: 숙제 등록/수정 -->
+  <div id="modal-homework" class="modal" onclick="if(event.target===this)closeModal('homework')">
+    <div class="modal-content">
+      <h3 id="homework-modal-title" class="text-xl font-bold mb-5">📝 숙제 추가</h3>
+      <form id="form-homework" class="space-y-4">
+        <input type="hidden" name="id" id="edit-homework-id">
+        <input type="text" name="subject" placeholder="과목" required class="w-full border p-3 rounded-xl outline-none">
+        <input type="text" name="title" placeholder="제목" required class="w-full border p-3 rounded-xl outline-none">
+        <textarea name="description" placeholder="설명" class="w-full border p-3 rounded-xl outline-none" rows="2"></textarea>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="text-[11px] text-gray-400 ml-1">마감일</label><input type="date" name="due_date" required class="w-full border p-3 rounded-xl outline-none"></div>
+          <div><label class="text-[11px] text-gray-400 ml-1">우선순위</label>
+            <select name="priority" class="w-full border p-3 rounded-xl outline-none">
+              <option value="1">🔴 긴급</option><option value="2" selected>🟡 보통</option><option value="3">🟢 여유</option>
+            </select>
+          </div>
+        </div>
+        <button type="submit" class="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold">숙제 저장</button>
       </form>
     </div>
   </div>
@@ -202,6 +224,22 @@
       </div>
       <div id="detail-content" class="text-base text-gray-600 mb-8 p-4 bg-gray-50 rounded-xl"></div>
       <div id="detail-actions" class="flex gap-2"></div>
+    </div>
+  </div>
+
+  <!-- 모달: 뉴스 키워드 설정 -->
+  <div id="modal-keyword" class="modal" onclick="if(event.target===this)closeModal('keyword')">
+    <div class="modal-content">
+      <div class="flex justify-between items-center mb-5">
+        <h3 class="text-lg font-bold text-gray-900">🔍 뉴스 검색 키워드</h3>
+        <button onclick="closeModal('keyword')" class="text-2xl text-gray-400">&times;</button>
+      </div>
+      <p class="text-xs text-gray-400 mb-4">쉼표(,)로 구분해서 입력하세요. 비워두면 아이 나이 기준으로 자동 설정됩니다.</p>
+      <form id="form-keyword" class="space-y-4">
+        <input type="text" id="keyword-input" placeholder="예: 과학, 코딩, 영어" class="w-full border p-3 rounded-xl outline-none focus:ring-2 focus:ring-indigo-100">
+        <div id="keyword-auto" class="text-xs text-gray-400 bg-gray-50 p-3 rounded-xl"></div>
+        <button type="submit" class="w-full bg-indigo-600 text-white p-3 rounded-xl font-bold shadow-lg">키워드 저장</button>
+      </form>
     </div>
   </div>
 
@@ -219,21 +257,29 @@
     });
 
     async function loadFullSummary(childId = null) {
-      const url = childId ? `${API}/summary/${childId}` : `${API}/summary`;
+      // currentChildId가 있으면 우선 사용
+      const targetId = childId || currentChildId;
+      const url = targetId ? `${API}/summary/${targetId}` : `${API}/summary`;
       const res = await fetch(url);
       const data = await res.json();
       children = data.children;
-      renderChildrenList(children, childId || (children[0] ? children[0].id : null));
-      renderNews(data.news);
+      renderChildrenList(children, targetId || (children[0] ? children[0].id : null));
       if (data.schedules) renderSchedule(data.schedules);
       if (data.homeworks) renderHomeworks(data.homeworks);
       if (data.supplies) renderSupplies(data.supplies);
       if (data.events) renderEvents(data.events);
       
-      // 첫 진입 시 첫 아이 조언 로드
-      if (currentChildId && !document.getElementById('ai-advice-container').classList.contains('active-summary')) {
-        document.getElementById('ai-advice-container').classList.add('active-summary');
-        selectChild(currentChildId);
+      // 뉴스는 나중에 비동기 로딩
+      setTimeout(() => loadNews(), 100);
+    }
+    
+    async function loadNews() {
+      try {
+        const res = await fetch(`${API}/news`);
+        const data = await res.json();
+        renderNews(data);
+      } catch (e) {
+        console.log('News load failed:', e);
       }
     }
 
@@ -252,23 +298,7 @@
 
     async function selectChild(id) {
       currentChildId = id;
-      document.getElementById('ai-advice-container').classList.remove('hidden');
-      document.getElementById('ai-advice-text').innerText = '부모님을 위한 맞춤 조언을 준비하고 있습니다...';
-      const child = children.find(c => c.id == id);
-      if(child) document.getElementById('ai-advice-name').innerText = `${child.name}를 위한 오늘의 육아 팁`;
-      
       await loadFullSummary(id);
-      loadAIAdvice(id);
-    }
-
-    async function loadAIAdvice(id) {
-      try {
-        const res = await fetch(`${API}/advice/${id}`);
-        const data = await res.json();
-        document.getElementById('ai-advice-text').innerText = `"${data.advice}"`;
-      } catch (e) {
-        document.getElementById('ai-advice-text').innerText = "조언을 가져오는데 실패했습니다.";
-      }
     }
 
     // 시간표 제목별 색상 해시
@@ -320,19 +350,25 @@
 
     function renderSupplies(data) {
       document.getElementById('supplies-list').innerHTML = data.map(s => `
-        <div class="p-3 bg-orange-50 border border-orange-100 rounded-2xl flex items-center gap-4">
-          <input type="checkbox" ${s.is_checked?'checked':''} class="w-5 h-5 rounded-lg border-orange-200 text-orange-500" onchange="toggleSupply(${s.id},this.checked)">
-          <div class="text-sm font-bold ${s.is_checked?'line-through text-gray-300':'text-gray-700'}">${s.item_name}</div>
+        <div onclick='showDetail("supply",${JSON.stringify(s).replace(/"/g,"&quot;")})' class="p-3 bg-orange-50 border border-orange-100 rounded-2xl flex items-center gap-4 cursor-pointer hover:shadow-md transition">
+          <input type="checkbox" ${s.is_checked?'checked':''} class="w-5 h-5 rounded-lg border-orange-200 text-orange-500" onclick="event.stopPropagation()" onchange="toggleSupply(${s.id},this.checked)">
+          <div class="flex-1">
+            <div class="text-sm font-bold ${s.is_checked?'line-through text-gray-300':'text-gray-700'}">${s.item_name}</div>
+            <div class="text-[10px] text-gray-400 mt-0.5">${s.date}</div>
+          </div>
         </div>`).join('') || '<p class="text-xs text-gray-400 p-4 text-center">준비물이 없습니다.</p>';
     }
 
     function renderNews(data) {
-      document.getElementById('news-list').innerHTML = data.slice(0, 6).map(n => `
-        <a href="${n.url}" target="_blank" class="p-5 border border-gray-100 rounded-2xl hover:bg-gray-50 transition block h-full bg-white group">
+      document.getElementById('news-list').innerHTML = data.slice(0, 3).map(n => {
+        const url = n.url || '#';
+        const isExternal = url.startsWith('http');
+        return `<a href="${isExternal ? url : '#'}" ${isExternal ? 'target="_blank" rel="noopener noreferrer"' : ''} class="p-5 border border-gray-100 rounded-2xl hover:bg-gray-50 transition block h-full bg-white group">
           <div class="text-[10px] text-indigo-500 font-bold mb-2 tracking-tighter uppercase">${n.source || 'EDUCATION'}</div>
           <h4 class="text-sm font-bold text-gray-900 line-clamp-2 mb-3 group-hover:text-indigo-600 leading-snug">${n.title}</h4>
           <p class="text-xs text-gray-400 line-clamp-2 leading-relaxed">${n.summary || ''}</p>
-        </a>`).join('') || '<p class="text-xs text-gray-400 p-4 font-bold text-center col-span-3">뉴스가 없습니다.</p>';
+        </a>`;
+      }).join('') || '<p class="text-xs text-gray-400 p-4 font-bold text-center col-span-3">뉴스가 없습니다.</p>';
     }
 
     // 모달 제어
@@ -379,14 +415,16 @@
 
     async function deleteItem(type, id) {
       if(!confirm('정말 삭제하시겠습니까?')) return;
-      await fetch(`${API}/${type}/${id}`, { method:'DELETE' });
-      closeModal('detail'); await loadFullSummary(currentChildId);
+      const res = await fetch(`${API}/${type}/${id}`, { method:'DELETE' });
+      if(!res.ok) { alert('삭제 실패: ' + (await res.text())); return; }
+      closeModal('detail');
+      await loadFullSummary(currentChildId);
       if(type === 'children') manageChildren();
     }
 
     function showDetail(type, data) {
       const m = document.getElementById('modal-detail');
-      document.getElementById('detail-title').innerText = data.title;
+      document.getElementById('detail-title').innerText = data.title || data.item_name || '상세보기';
       document.getElementById('detail-content').innerHTML = `
         <div class="space-y-3">
            <p>📅 <strong>날짜/명칭:</strong> ${data.date || data.due_date || data.subject || ''}</p>
@@ -394,9 +432,80 @@
            ${data.description ? `<p class="border-t pt-3 mt-3">${data.description}</p>` : ''}
            ${data.location ? `<p>📍 <strong>장소:</strong> ${data.location}</p>` : ''}
            ${data.teacher ? `<p>👩‍🏫 <strong>선생님:</strong> ${data.teacher}</p>` : ''}
+           ${data.category ? `<p>📂 <strong>카테고리:</strong> ${data.category}</p>` : ''}
+           ${data.item_name ? `<p>🎒 <strong>준비물:</strong> ${data.item_name}</p>` : ''}
         </div>`;
-      document.getElementById('detail-actions').innerHTML = `<button onclick="deleteItem('${type}s',${data.id})" class="flex-1 bg-red-50 text-red-600 py-4 rounded-2xl font-black shadow-sm order-last">기록 삭제하기</button>`;
+      document.getElementById('detail-actions').innerHTML = `
+        <button onclick="editItem('${type}',${JSON.stringify(data).replace(/"/g,'&quot;')})" class="flex-1 bg-indigo-50 text-indigo-600 py-4 rounded-2xl font-black shadow-sm">수정</button>
+        <button onclick="deleteItemDirect('${type}',${data.id})" class="flex-1 bg-red-50 text-red-600 py-4 rounded-2xl font-black shadow-sm">삭제</button>`;
       m.classList.add('active');
+    }
+
+    function deleteItemDirect(type, id) {
+      const map = { supply: 'supplies', supplies: 'supplies', schedule: 'schedules', schedules: 'schedules', homework: 'homeworks', homeworks: 'homeworks', event: 'events', events: 'events', child: 'children', children: 'children' };
+      const apiType = map[type] || type + 's';
+      deleteItem(apiType, id);
+    }
+
+    // 수정 팝업 열기
+    function editItem(type, data) {
+      closeModal('detail');
+      if (type === 'schedule') {
+        document.getElementById('schedule-modal-title').innerText = '📅 스케줄 수정';
+        document.getElementById('edit-schedule-id').value = data.id;
+        const form = document.getElementById('form-schedule');
+        form.title.value = data.title;
+        form.start_time.value = data.start_time;
+        form.end_time.value = data.end_time || '';
+        form.location.value = data.location || '';
+        form.teacher.value = data.teacher || '';
+        // 요일 체크
+        form.querySelectorAll('[name="days"]').forEach(cb => cb.checked = parseInt(cb.value) === data.day_of_week);
+        openModal('schedule');
+      } else if (type === 'homework') {
+        document.getElementById('homework-modal-title').innerText = '📝 숙제 수정';
+        document.getElementById('edit-homework-id').value = data.id;
+        const form = document.getElementById('form-homework');
+        form.subject.value = data.subject;
+        form.title.value = data.title;
+        form.description.value = data.description || '';
+        form.due_date.value = data.due_date;
+        form.priority.value = data.priority;
+        openModal('homework');
+      } else if (type === 'event') {
+        document.getElementById('event-modal-title').innerText = '🗓️ 일정 수정';
+        document.getElementById('edit-event-id').value = data.id;
+        const form = document.getElementById('form-event');
+        form.title.value = data.title;
+        form.date.value = data.date;
+        form.description.value = data.description || '';
+        openModal('event');
+      } else if (type === 'supply') {
+        document.getElementById('supply-modal-title').innerText = '🎒 준비물 수정';
+        document.getElementById('edit-supply-id').value = data.id;
+        const form = document.getElementById('form-supply');
+        form.item_name.value = data.item_name;
+        form.category.value = data.category || '교재';
+        form.date.value = data.date;
+        openModal('supply');
+      }
+    }
+
+    // 수정 폼 리셋
+    function resetScheduleForm() {
+      document.getElementById('schedule-modal-title').innerText = '📅 스케줄 등록';
+      document.getElementById('edit-schedule-id').value = '';
+      document.getElementById('form-schedule').reset();
+    }
+    function resetHomeworkForm() {
+      document.getElementById('homework-modal-title').innerText = '📝 숙제 추가';
+      document.getElementById('edit-homework-id').value = '';
+      document.getElementById('form-homework').reset();
+    }
+    function resetEventForm() {
+      document.getElementById('event-modal-title').innerText = '🗓️ 주요 일정 추가';
+      document.getElementById('edit-event-id').value = '';
+      document.getElementById('form-event').reset();
     }
 
     // 폼 제출 핸들러
@@ -413,29 +522,81 @@
       e.preventDefault();
       const fd = new FormData(e.target);
       const data = Object.fromEntries(fd);
+      const editId = data.id;
       const days = fd.getAll('days');
-      if(days.length === 0) return alert('요일을 하나 이상 선택해 주세요.');
+      if(days.length === 0 && !editId) return alert('요일을 하나 이상 선택해 주세요.');
       
-      const promises = days.map(day => fetch(`${API}/schedules`, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({...data, child_id: currentChildId, day_of_week: parseInt(day), recurring: true})
-      }));
-      
-      const results = await Promise.all(promises);
-      if(results.every(r => r.ok)) {
-        closeModal('schedule'); e.target.reset();
-        await loadFullSummary(currentChildId);
-        alert('시간표가 성공적으로 저장되었습니다!');
+      if (editId) {
+        // 수정: 첫 번째 선택 요일로 업데이트
+        const day = days.length > 0 ? parseInt(days[0]) : null;
+        const body = { ...data, day_of_week: day, recurring: true, child_id: currentChildId };
+        delete body.id; delete body.days;
+        await fetch(`${API}/schedules/${editId}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify(body) });
+      } else {
+        // 추가: 여러 요일에 각각 등록
+        const promises = days.map(day => fetch(`${API}/schedules`, {
+          method:'POST', headers:{'Content-Type':'application/json'},
+          body: JSON.stringify({...data, child_id: currentChildId, day_of_week: parseInt(day), recurring: true})
+        }));
+        await Promise.all(promises);
       }
+      closeModal('schedule'); resetScheduleForm();
+      await loadFullSummary(currentChildId);
+      alert(editId ? '시간표가 수정되었습니다!' : '시간표가 저장되었습니다!');
     };
 
     document.getElementById('form-event').onsubmit = async (e) => {
       e.preventDefault();
       const body = Object.fromEntries(new FormData(e.target));
       body.child_id = currentChildId;
-      await fetch(`${API}/events`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
-      closeModal('event'); e.target.reset(); await loadFullSummary(currentChildId);
+      const editId = body.id;
+      if (editId) {
+        delete body.id;
+        await fetch(`${API}/events/${editId}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      } else {
+        await fetch(`${API}/events`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      }
+      closeModal('event'); resetEventForm(); await loadFullSummary(currentChildId);
     };
+
+    document.getElementById('form-supply').onsubmit = async (e) => {
+      e.preventDefault();
+      const body = Object.fromEntries(new FormData(e.target));
+      body.child_id = currentChildId;
+      const editId = body.id;
+      if (editId) {
+        delete body.id;
+        await fetch(`${API}/supplies/${editId}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      } else {
+        await fetch(`${API}/supplies`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      }
+      closeModal('supply'); e.target.reset();
+      await loadFullSummary(currentChildId);
+    };
+
+    document.getElementById('form-homework').onsubmit = async (e) => {
+      e.preventDefault();
+      const body = Object.fromEntries(new FormData(e.target));
+      body.child_id = currentChildId;
+      body.priority = parseInt(body.priority);
+      const editId = body.id;
+      if (editId) {
+        delete body.id;
+        body.status = body.status || 'pending';
+        await fetch(`${API}/homeworks/${editId}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      } else {
+        await fetch(`${API}/homeworks`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      }
+      closeModal('homework'); resetHomeworkForm(); await loadFullSummary(currentChildId);
+    };
+
+    function openSupplyModal() {
+      document.getElementById('supply-date-input').value = new Date().toISOString().split('T')[0];
+      openModal('supply');
+    }
+    function openHomeworkModal() {
+      openModal('homework');
+    }
 
     async function toggleSupply(id, checked) {
       await fetch(`${API}/supplies/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({is_checked:checked}) });
@@ -450,14 +611,44 @@
       btn.classList.remove('animate-spin');
     }
 
-    async function filterNews(tag) {
-      const res = await fetch(`${API}/news${tag?`?tags=${tag}`:''}`);
-      const data = await res.json();
-      renderNews(data);
-      document.querySelectorAll('.news-filter').forEach(b => {
-        b.className = `text-[10px] px-2 py-1 rounded-full news-filter ${b.dataset.tag === (tag||'') ? 'bg-indigo-100 text-indigo-600 active' : 'bg-gray-100 text-gray-500'}`;
-      });
+    // 뉴스 키워드 모달
+    async function openKeywordModal() {
+      try {
+        const res = await fetch(`${API}/news/keywords`);
+        const data = await res.json();
+        document.getElementById('keyword-input').value = data.keywords || '';
+      } catch(e) {}
+      // 나이 기반 자동 키워드 표시
+      const ageKw = [];
+      if (children.length > 0) {
+        const now = new Date();
+        children.forEach(c => {
+          if (!c.birth_date) return;
+          const age = now.getFullYear() - new Date(c.birth_date).getFullYear();
+          if (age <= 6) ageKw.push('유아 교육, 어린이집 유치원');
+          else if (age <= 12) ageKw.push('초등 교육, 초등학교 학습');
+          else if (age <= 15) ageKw.push('중등 교육, 중학교 학습');
+          else ageKw.push('고등 교육, 고등학교 입시');
+        });
+      }
+      document.getElementById('keyword-auto').textContent = ageKw.length > 0 
+        ? `아이 나이 기반 자동 키워드: ${ageKw.join(', ')}` 
+        : '아이를 등록하면 나이 기반 키워드가 자동 추가됩니다.';
+      openModal('keyword');
     }
+
+    document.getElementById('form-keyword').onsubmit = async (e) => {
+      e.preventDefault();
+      const keywords = document.getElementById('keyword-input').value;
+      await fetch(`${API}/news/keywords`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ keywords })
+      });
+      closeModal('keyword');
+      alert('키워드가 저장되었습니다! 뉴스를 새로고침하면 적용됩니다.');
+    };
+
   </script>
 </body>
 </html>
