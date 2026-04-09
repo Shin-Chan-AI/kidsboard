@@ -1,17 +1,19 @@
 {
   "name": "kidsboard",
   "version": "1.0.0",
-  "description": "Kids Education Dashboard",
+  "description": "아이 교육 통합 대시보드",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "dev": "node server.js",
+    "collect-news": "node news/news-collector.js"
   },
   "dependencies": {
-    "axios": "^1.7.2",
-    "cheerio": "^1.0.0-rc.12",
+    "axios": "^1.14.0",
+    "cheerio": "^1.2.0",
     "cors": "^2.8.5",
-    "express": "^4.19.2",
-    "sqlite3": "^5.1.7",
-    "@google-cloud/storage": "^7.11.0"
-  }
+    "express": "^4.18.0",
+    "sqlite3": "^5.1.0"
+  },
+  "license": "ISC"
 }

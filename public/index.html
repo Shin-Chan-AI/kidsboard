@@ -1,2 +1,463 @@
-<!DOCTYPE html>\n<html lang=\"ko\">\n<head>\n  <meta charset=\"UTF-8\">\n  <meta name=\"viewport\" content=\"width=device-width, initial-scale=1.0\">\n  <title>KidsBoard - 아이 교육 대시보드</title>\n  <script src=\"https://cdn.tailwindcss.com\"></script>\n  <style>\n    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');\n    body { font-family: 'Noto Sans KR', sans-serif; }\n    .card { transition: transform 0.2s, box-shadow 0.2s; }\n    .card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }\n    .checkbox-done { text-decoration: line-through; color: #9ca3af; }\n    .schedule-grid { display: grid; grid-template-columns: 60px repeat(7, 1fr); gap: 2px; font-size: clamp(10px, 1.2vw, 13px); }\n    .schedule-cell { padding: 4px; text-align: center; border-radius: 6px; min-height: 40px; display: flex; align-items: center; justify-content: center; word-break: keep-all; line-height: 1.2; box-shadow: inset 0 0 0 1px #f3f4f6; }\n    .schedule-header { background: #f3f4f6; font-weight: 600; color: #374151; }\n    .schedule-time { background: #f9fafb; color: #9ca3af; font-size: clamp(9px, 1vw, 11px); }\n    .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }\n    .modal.active { display: flex; }\n    .modal-content { background: white; border-radius: 20px; padding: 24px; width: 95%; max-width: 440px; animation: fadeIn 0.2s ease; overflow-y: auto; max-height: 90vh; }\n    @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }\n  </style>\n</head>\n<body class=\"bg-gray-50 min-h-screen pb-20 lg:pb-8\">\n\n  <header class=\"bg-white shadow-sm border-b sticky top-0 z-50\">\n    <div class=\"max-w-7xl mx-auto px-4 py-3 flex justify-between items-center\">\n      <div class=\"flex items-center gap-3\">\n        <span class=\"text-2xl\">📚</span>\n        <h1 class=\"text-xl font-bold text-gray-800\">KidsBoard</h1>\n      </div>\n      <div id=\"current-date\" class=\"text-sm font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full\"></div>\n    </div>\n  </header>\n\n  <div class=\"max-w-7xl mx-auto px-4 py-4 overflow-x-auto no-scrollbar flex gap-2\">\n    <div id=\"child-selector\" class=\"flex gap-2\"></div>\n  </div>\n\n  <main class=\"max-w-7xl mx-auto px-4 space-y-4\">\n    <div class=\"grid grid-cols-1 lg:grid-cols-3 gap-4\">\n      \n      <div class=\"card bg-white rounded-2xl shadow p-5 lg:col-span-2 border-t-4 border-blue-500\">\n        <div class=\"flex justify-between items-center mb-4\">\n          <h2 class=\"text-base font-bold text-gray-800\">📅 주간 스케줄</h2>\n          <button onclick=\"openModal('schedule')\" class=\"text-xs font-bold text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 rounded-full transition\">+ 추가</button>\n        </div>\n        <div id=\"schedule-grid\" class=\"schedule-grid\"></div>\n        <div id=\"schedule-legend\" class=\"flex gap-3 mt-4 flex-wrap\"></div>\n      </div>\n\n      <div class=\"space-y-4\">\n        <div class=\"card bg-white rounded-2xl shadow p-5 border-t-4 border-indigo-500\">\n          <div class=\"flex justify-between items-center mb-4\">\n            <h2 class=\"text-base font-bold text-gray-800\">🗓️ 주요 일정</h2>\n            <button onclick=\"openModal('event')\" class=\"text-xs text-indigo-600 hover:underline\">+ 추가</button>\n          </div>\n          <div id=\"event-list\" class=\"space-y-2\"></div>\n        </div>\n\n        <div class=\"card bg-white rounded-2xl shadow p-5 border-t-4 border-orange-400\">\n          <div class=\"flex justify-between items-center mb-4\">\n            <h2 class=\"text-base font-bold text-gray-800\">🎒 준비물</h2>\n            <button onclick=\"openModal('supply')\" class=\"text-xs text-orange-600 hover:underline\">+ 추가</button>\n          </div>\n          <div id=\"supplies-list\" class=\"space-y-2.5\"></div>\n        </div>\n\n        <div class=\"card bg-white rounded-2xl shadow p-5 border-t-4 border-green-500\">\n          <div class=\"flex justify-between items-center mb-4\">\n            <h2 class=\"text-base font-bold text-gray-800\">📝 숙제</h2>\n            <button onclick=\"openModal('homework')\" class=\"text-xs text-green-600 hover:underline\">+ 추가</button>\n          </div>\n          <div id=\"homework-list\" class=\"space-y-2.5\"></div>\n        </div>\n      </div>\n\n      <div class=\"lg:col-span-3\">\n        <div class=\"card bg-white rounded-2xl shadow p-5 border-t-4 border-pink-500\">\n          <div class=\"flex items-center justify-between mb-5\">\n            <div class=\"flex items-center gap-2\">\n              <h2 class=\"text-base font-bold text-gray-800\">📰 교육 뉴스</h2>\n              <button onclick=\"refreshNews()\" id=\"news-refresh-btn\" class=\"p-1 hover:bg-gray-100 rounded-full transition text-gray-400\">\n                <svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-4 w-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15\" /></svg>\n              </button>\n              <button onclick=\"openKeywordModal()\" class=\"p-1 hover:bg-gray-100 rounded-full transition text-gray-400\">\n                <svg xmlns=\"http://www.w3.org/2000/svg\" class=\"h-4 w-4\" fill=\"none\" viewBox=\"0 0 24 24\" stroke=\"currentColor\"><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.066 2.573c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.573 1.066c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.066-2.573c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z\" /><path stroke-linecap=\"round\" stroke-linejoin=\"round\" stroke-width=\"2\" d=\"M15 12a3 3 0 11-6 0 3 3 0 016 0z\" /></svg>\n              </button>\n            </div>\n
-          </div>\n          <div id=\"news-list\" class=\"grid grid-cols-1 md:grid-cols-3 gap-4\"></div>\n        </div>\n      </div>\n    </div>\n  </main>\n</body>\n</html>
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KidsBoard - 아이 교육 대시보드</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+    body { font-family: 'Noto Sans KR', sans-serif; }
+    .card { transition: transform 0.2s, box-shadow 0.2s; }
+    .card:hover { transform: translateY(-2px); box-shadow: 0 8px 25px rgba(0,0,0,0.1); }
+    .checkbox-done { text-decoration: line-through; color: #9ca3af; }
+    .schedule-grid { display: grid; grid-template-columns: 60px repeat(7, 1fr); gap: 2px; font-size: clamp(10px, 1.2vw, 13px); }
+    .schedule-cell { padding: 4px; text-align: center; border-radius: 6px; min-height: 40px; display: flex; align-items: center; justify-content: center; word-break: keep-all; line-height: 1.2; box-shadow: inset 0 0 0 1px #f3f4f6; }
+    .schedule-header { background: #f3f4f6; font-weight: 600; color: #374151; }
+    .schedule-time { background: #f9fafb; color: #9ca3af; font-size: clamp(9px, 1vw, 11px); }
+    .modal { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 1000; justify-content: center; align-items: center; }
+    .modal.active { display: flex; }
+    .modal-content { background: white; border-radius: 20px; padding: 24px; width: 95%; max-width: 440px; animation: fadeIn 0.2s ease; overflow-y: auto; max-height: 90vh; }
+    @keyframes fadeIn { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+  </style>
+</head>
+<body class="bg-gray-50 min-h-screen pb-20 lg:pb-8">
+
+  <header class="bg-white shadow-sm border-b sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-3 flex justify-between items-center">
+      <div class="flex items-center gap-3">
+        <span class="text-2xl">📚</span>
+        <h1 class="text-xl font-bold text-gray-800">KidsBoard</h1>
+      </div>
+      <div id="current-date" class="text-sm font-bold text-indigo-600 bg-indigo-50 px-3 py-1 rounded-full"></div>
+    </div>
+  </header>
+
+  <div class="max-w-7xl mx-auto px-4 py-4 overflow-x-auto no-scrollbar flex gap-2">
+    <div id="child-selector" class="flex gap-2"></div>
+  </div>
+
+  <main class="max-w-7xl mx-auto px-4 space-y-4">
+    <!-- AI 조언 섹션 -->
+    <div id="ai-advice-container" class="hidden">
+      <div class="bg-gradient-to-r from-indigo-500 to-purple-600 rounded-2xl p-0.5 shadow-lg">
+        <div class="bg-white rounded-[14px] p-5 flex items-start gap-4">
+          <div class="bg-indigo-100 p-3 rounded-2xl text-2xl flex-shrink-0">🤖</div>
+          <div class="flex-1">
+            <div class="flex items-center justify-between mb-1">
+              <h3 id="ai-advice-name" class="text-sm font-bold text-indigo-600">아이별 맞춤 가이드</h3>
+              <span class="text-[10px] font-bold bg-indigo-50 text-indigo-400 px-2 py-0.5 rounded-full uppercase tracking-wider">AI Powered</span>
+            </div>
+            <p id="ai-advice-text" class="text-sm text-gray-700 leading-relaxed italic font-medium">조언을 불러오는 중입니다...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+    
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-4">
+      
+      <!-- 시간표 -->
+      <div class="card bg-white rounded-2xl shadow p-5 lg:col-span-2">
+        <div class="flex justify-between items-center mb-4">
+          <h2 class="text-base font-bold text-gray-800">📅 주간 스케줄</h2>
+          <button onclick="openModal('schedule')" class="text-xs font-bold text-indigo-600 hover:bg-indigo-50 px-3 py-1.5 rounded-full transition">+ 추가</button>
+        </div>
+        <div id="schedule-grid" class="schedule-grid"></div>
+        <div id="schedule-legend" class="flex gap-3 mt-4 flex-wrap"></div>
+      </div>
+
+      <!-- 보조 칼럼 -->
+      <div class="space-y-4">
+        <!-- 주요 일정 -->
+        <div class="card bg-white rounded-2xl shadow p-5 border-t-4 border-indigo-500">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-base font-bold text-gray-800">🗓️ 주요 일정</h2>
+            <button onclick="openModal('event')" class="text-xs text-indigo-600 hover:underline">+ 추가</button>
+          </div>
+          <div id="event-list" class="space-y-2"></div>
+        </div>
+
+        <!-- 준비물 -->
+        <div class="card bg-white rounded-2xl shadow p-5 border-t-4 border-orange-400">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-base font-bold text-gray-800">🎒 준비물</h2>
+            <button onclick="openModal('supply')" class="text-xs text-orange-600 hover:underline">+ 추가</button>
+          </div>
+          <div id="supplies-list" class="space-y-2.5"></div>
+        </div>
+
+        <!-- 숙제 -->
+        <div class="card bg-white rounded-2xl shadow p-5 border-t-4 border-green-500">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-base font-bold text-gray-800">📝 숙제</h2>
+            <button onclick="openModal('homework')" class="text-xs text-green-600 hover:underline">+ 추가</button>
+          </div>
+          <div id="homework-list" class="space-y-2.5"></div>
+        </div>
+      </div>
+
+      <!-- 뉴스 (가장 아래) -->
+      <div class="lg:col-span-3">
+        <div class="card bg-white rounded-2xl shadow p-5">
+          <div class="flex items-center justify-between mb-5">
+            <div class="flex items-center gap-2">
+              <h2 class="text-base font-bold text-gray-800">📰 교육 뉴스</h2>
+              <button onclick="refreshNews()" id="news-refresh-btn" class="p-1 hover:bg-gray-100 rounded-full transition text-gray-400">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
+              </button>
+            </div>
+            <div class="flex gap-1 overflow-x-auto pb-1 no-scrollbar">
+              <button onclick="filterNews('')" class="text-[10px] px-2 py-1 bg-indigo-100 text-indigo-600 rounded-full news-filter active" data-tag="">전체</button>
+              <button onclick="filterNews('육아꿀팁')" class="text-[10px] px-2 py-1 bg-gray-100 text-gray-500 rounded-full news-filter" data-tag="육아꿀팁">육아꿀팁</button>
+              <button onclick="filterNews('학습법')" class="text-[10px] px-2 py-1 bg-gray-100 text-gray-500 rounded-full news-filter" data-tag="학습법">학습법</button>
+              <button onclick="filterNews('입시/정책')" class="text-[10px] px-2 py-1 bg-gray-100 text-gray-500 rounded-full news-filter" data-tag="입시/정책">입시/정책</button>
+            </div>
+          </div>
+          <div id="news-list" class="grid grid-cols-1 md:grid-cols-3 gap-4"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <!-- 모달: 아이 관리 -->
+  <div id="modal-child" class="modal" onclick="if(event.target===this)closeModal('child')">
+    <div class="modal-content">
+      <div class="flex justify-between items-center mb-6">
+        <h3 class="text-xl font-bold">👦👧 우리 아이 관리</h3>
+        <button onclick="closeModal('child')" class="text-2xl text-gray-400 font-light">&times;</button>
+      </div>
+      <div id="manage-child-list" class="space-y-2 mb-6"></div>
+      <div class="border-t pt-6 bg-gray-50 -mx-6 px-6 -mb-6 pb-6 rounded-b-2xl">
+        <h4 id="child-form-title" class="text-sm font-bold text-gray-600 mb-4">새 아이 등록</h4>
+        <form id="form-child" class="space-y-4">
+          <input type="hidden" name="id" id="edit-child-id">
+          <input type="text" name="name" id="edit-child-name" placeholder="이름" required class="w-full border p-3 rounded-xl focus:ring-2 focus:ring-indigo-100 outline-none">
+          <div class="grid grid-cols-2 gap-3">
+            <select name="grade" id="edit-child-grade" class="border p-3 rounded-xl outline-none">
+              <option value="1">1학년</option><option value="2">2학년</option><option value="3">3학년</option><option value="4">4학년</option><option value="5">5학년</option><option value="6">6학년</option>
+            </select>
+            <select name="gender" id="edit-child-gender" class="border p-3 rounded-xl outline-none">
+              <option value="boy">남아</option><option value="girl">여아</option>
+            </select>
+          </div>
+          <div class="flex gap-2">
+            <button type="button" onclick="resetChildForm()" id="btn-child-reset" class="hidden flex-1 bg-gray-200 text-gray-600 p-3 rounded-xl font-bold">취소</button>
+            <button type="submit" id="btn-child-submit" class="flex-1 bg-indigo-600 text-white p-3 rounded-xl font-bold shadow-lg">아이 정보 저장</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- 모달: 시간표 등록 -->
+  <div id="modal-schedule" class="modal" onclick="if(event.target===this)closeModal('schedule')">
+    <div class="modal-content">
+      <h3 class="text-xl font-bold mb-6">📅 스케줄 등록</h3>
+      <form id="form-schedule" class="space-y-4">
+        <input type="text" name="title" placeholder="과목명/활동명" required class="w-full border p-3 rounded-xl outline-none focus:ring-2 focus:ring-indigo-100">
+        <div>
+          <label class="text-xs font-bold text-gray-400 block mb-2">요일 선택 (중복 가능)</label>
+          <div class="flex gap-1.5 flex-wrap">
+            <label class="flex-1 min-w-[50px] text-center py-2 border rounded-lg cursor-pointer hover:bg-indigo-50"><input type="checkbox" name="days" value="1" class="hidden-input mr-1">월</label>
+            <label class="flex-1 min-w-[50px] text-center py-2 border rounded-lg cursor-pointer hover:bg-indigo-50"><input type="checkbox" name="days" value="2" class="hidden-input mr-1">화</label>
+            <label class="flex-1 min-w-[50px] text-center py-2 border rounded-lg cursor-pointer hover:bg-indigo-50"><input type="checkbox" name="days" value="3" class="hidden-input mr-1">수</label>
+            <label class="flex-1 min-w-[50px] text-center py-2 border rounded-lg cursor-pointer hover:bg-indigo-50"><input type="checkbox" name="days" value="4" class="hidden-input mr-1">목</label>
+            <label class="flex-1 min-w-[50px] text-center py-2 border rounded-lg cursor-pointer hover:bg-indigo-50"><input type="checkbox" name="days" value="5" class="hidden-input mr-1">금</label>
+            <label class="flex-1 min-w-[50px] text-center py-2 border rounded-lg cursor-pointer hover:bg-indigo-50 bg-gray-50"><input type="checkbox" name="days" value="6" class="hidden-input mr-1">토</label>
+            <label class="flex-1 min-w-[50px] text-center py-2 border rounded-lg cursor-pointer hover:bg-indigo-50 bg-gray-50"><input type="checkbox" name="days" value="0" class="hidden-input mr-1">일</label>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="text-[11px] text-gray-400 ml-1">시작 시간</label><input type="time" name="start_time" required class="w-full border p-3 rounded-xl outline-none"></div>
+          <div><label class="text-[11px] text-gray-400 ml-1">종료 시간</label><input type="time" name="end_time" class="w-full border p-3 rounded-xl outline-none"></div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+          <input type="text" name="location" placeholder="장소" class="border p-3 rounded-xl outline-none">
+          <input type="text" name="teacher" placeholder="선생님" class="border p-3 rounded-xl outline-none">
+        </div>
+        <button type="submit" class="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold shadow-lg mt-2">시간표 저장하기</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- 기타 모달 생략(유사 구조) -->
+  <div id="modal-event" class="modal" onclick="if(event.target===this)closeModal('event')">
+    <div class="modal-content">
+      <h3 class="text-xl font-bold mb-5">🗓️ 주요 일정 추가</h3>
+      <form id="form-event" class="space-y-4">
+        <input type="text" name="title" placeholder="일정명" required class="w-full border p-3 rounded-xl outline-none">
+        <input type="date" name="date" required id="event-date-input" class="w-full border p-3 rounded-xl outline-none">
+        <textarea name="description" placeholder="상세 내용" class="w-full border p-3 rounded-xl outline-none" rows="3"></textarea>
+        <button type="submit" class="w-full bg-indigo-600 text-white p-4 rounded-xl font-bold">일정 저장</button>
+      </form>
+    </div>
+  </div>
+
+  <div id="modal-detail" class="modal" onclick="if(event.target===this)closeModal('detail')">
+    <div class="modal-content">
+      <div class="flex justify-between items-center mb-5">
+        <h3 id="detail-title" class="text-lg font-bold text-gray-900"></h3>
+        <button onclick="closeModal('detail')" class="text-2xl text-gray-400">&times;</button>
+      </div>
+      <div id="detail-content" class="text-base text-gray-600 mb-8 p-4 bg-gray-50 rounded-xl"></div>
+      <div id="detail-actions" class="flex gap-2"></div>
+    </div>
+  </div>
+
+  <script>
+    const API = '/api';
+    let children = [];
+    let currentChildId = null;
+
+    // 초기화
+    document.addEventListener('DOMContentLoaded', async () => {
+      const now = new Date();
+      document.getElementById('current-date').textContent = `${now.getMonth()+1}월 ${now.getDate()}일 (${'일월화수목금토'[now.getDay()]})`;
+      document.querySelectorAll('[type="date"]').forEach(i => i.value = now.toISOString().split('T')[0]);
+      await loadFullSummary();
+    });
+
+    async function loadFullSummary(childId = null) {
+      const url = childId ? `${API}/summary/${childId}` : `${API}/summary`;
+      const res = await fetch(url);
+      const data = await res.json();
+      children = data.children;
+      renderChildrenList(children, childId || (children[0] ? children[0].id : null));
+      renderNews(data.news);
+      if (data.schedules) renderSchedule(data.schedules);
+      if (data.homeworks) renderHomeworks(data.homeworks);
+      if (data.supplies) renderSupplies(data.supplies);
+      if (data.events) renderEvents(data.events);
+      
+      // 첫 진입 시 첫 아이 조언 로드
+      if (currentChildId && !document.getElementById('ai-advice-container').classList.contains('active-summary')) {
+        document.getElementById('ai-advice-container').classList.add('active-summary');
+        selectChild(currentChildId);
+      }
+    }
+
+    function renderChildrenList(list, activeId) {
+      const parent = document.getElementById('child-selector');
+      if (list.length === 0) {
+        parent.innerHTML = `<button onclick="manageChildren()" class="px-8 py-3 bg-indigo-600 text-white rounded-full font-bold shadow-lg">+ 우리 아이 등록하기</button>`;
+        return;
+      }
+      parent.innerHTML = list.map(c => {
+        const isActive = c.id == activeId;
+        if (isActive) currentChildId = c.id;
+        return `<button onclick="selectChild(${c.id})" class="px-5 py-2.5 rounded-full text-sm font-bold shadow-sm transition-all flex-shrink-0 ${isActive?'bg-indigo-600 text-white ring-4 ring-indigo-50':'bg-white text-gray-600 border border-gray-100'}">${c.gender==='boy'?'👦':'👧'} ${c.name}</button>`;
+      }).join('') + `<button onclick="manageChildren()" class="px-5 py-2.5 bg-white text-indigo-600 border border-indigo-100 rounded-full text-sm font-bold shadow-sm whitespace-nowrap">+ 아이 관리</button>`;
+    }
+
+    async function selectChild(id) {
+      currentChildId = id;
+      document.getElementById('ai-advice-container').classList.remove('hidden');
+      document.getElementById('ai-advice-text').innerText = '부모님을 위한 맞춤 조언을 준비하고 있습니다...';
+      const child = children.find(c => c.id == id);
+      if(child) document.getElementById('ai-advice-name').innerText = `${child.name}를 위한 오늘의 육아 팁`;
+      
+      await loadFullSummary(id);
+      loadAIAdvice(id);
+    }
+
+    async function loadAIAdvice(id) {
+      try {
+        const res = await fetch(`${API}/advice/${id}`);
+        const data = await res.json();
+        document.getElementById('ai-advice-text').innerText = `"${data.advice}"`;
+      } catch (e) {
+        document.getElementById('ai-advice-text').innerText = "조언을 가져오는데 실패했습니다.";
+      }
+    }
+
+    // 시간표 제목별 색상 해시
+    function getColorByTitle(title) {
+      const colors = ['#fef2f2', '#fffbeb', '#f0fdf4', '#eff6ff', '#f5f3ff', '#fdf2f8', '#faf5ff'];
+      let hash = 0;
+      for (let i = 0; i < title.length; i++) hash = title.charCodeAt(i) + ((hash << 5) - hash);
+      return colors[Math.abs(hash) % colors.length];
+    }
+
+    function renderSchedule(data) {
+      const parent = document.getElementById('schedule-grid');
+      const days = ['일','월','화','수','목','금','토'];
+      const times = [...new Set(data.map(s=>s.start_time))].sort();
+      let html = '<div class="schedule-cell schedule-header">시간</div>';
+      days.forEach(d => html += `<div class="schedule-cell schedule-header">${d}</div>`);
+      times.forEach(t => {
+        html += `<div class="schedule-cell schedule-time">${t}</div>`;
+        for(let d=0; d<7; d++) {
+          const s = data.find(x=>x.day_of_week===d && x.start_time===t);
+          const color = s ? getColorByTitle(s.title) : '#fff';
+          html += `<div class="schedule-cell rounded-lg transition-all ${s?'font-bold text-[10px] shadow-sm border border-gray-50 cursor-pointer':'hover:bg-gray-50'}" style="background:${color}" onclick='${s?`showDetail("schedule",${JSON.stringify(s).replace(/"/g,"&quot;")})`:""}'>${s?s.title:''}</div>`;
+        }
+      });
+      parent.innerHTML = html;
+    }
+
+    function renderEvents(data) {
+      const parent = document.getElementById('event-list');
+      const today = new Date(); today.setHours(0,0,0,0);
+      parent.innerHTML = data.map(e => {
+        const start = new Date(e.date); start.setHours(0,0,0,0);
+        const diff = Math.ceil((start - today)/(1000*60*60*24));
+        const dday = diff === 0 ? 'D-Day' : (diff > 0 ? `D-${diff}` : `D+${Math.abs(diff)}`);
+        return `<div onclick='showDetail("event",${JSON.stringify(e).replace(/"/g,"&quot;")})' class="flex justify-between items-center p-3.5 bg-indigo-50 border border-indigo-100 rounded-2xl cursor-pointer hover:shadow-md transition"><div class="text-sm font-bold text-gray-800">${e.title}<p class="text-[10px] text-gray-400 font-normal mt-0.5">${e.date}</p></div><div class="px-2.5 py-0.5 bg-indigo-600 text-white rounded-lg text-[10px] font-black">${dday}</div></div>`;
+      }).join('') || '<p class="text-xs text-gray-400 p-4 text-center">예정된 일정이 없습니다.</p>';
+    }
+
+    function renderHomeworks(data) {
+      document.getElementById('homework-list').innerHTML = data.map(h => `
+        <div onclick='showDetail("homework",${JSON.stringify(h).replace(/"/g,"&quot;")})' class="p-3.5 bg-white border border-gray-100 rounded-2xl shadow-sm cursor-pointer hover:border-green-300 transition flex items-center justify-between">
+          <div>
+            <div class="flex items-center gap-2 font-bold mb-0.5"><div class="w-2 h-2 rounded-full ${h.priority===1?'bg-red-500':'bg-green-500'}"></div><div class="text-sm text-gray-800">${h.title}</div></div>
+            <div class="text-[10px] text-gray-400">${h.subject} | ${h.due_date}</div>
+          </div>
+          <span class="text-gray-300">→</span>
+        </div>`).join('') || '<p class="text-xs text-gray-400 p-4 text-center">숙제가 없습니다.</p>';
+    }
+
+    function renderSupplies(data) {
+      document.getElementById('supplies-list').innerHTML = data.map(s => `
+        <div class="p-3 bg-orange-50 border border-orange-100 rounded-2xl flex items-center gap-4">
+          <input type="checkbox" ${s.is_checked?'checked':''} class="w-5 h-5 rounded-lg border-orange-200 text-orange-500" onchange="toggleSupply(${s.id},this.checked)">
+          <div class="text-sm font-bold ${s.is_checked?'line-through text-gray-300':'text-gray-700'}">${s.item_name}</div>
+        </div>`).join('') || '<p class="text-xs text-gray-400 p-4 text-center">준비물이 없습니다.</p>';
+    }
+
+    function renderNews(data) {
+      document.getElementById('news-list').innerHTML = data.slice(0, 6).map(n => `
+        <a href="${n.url}" target="_blank" class="p-5 border border-gray-100 rounded-2xl hover:bg-gray-50 transition block h-full bg-white group">
+          <div class="text-[10px] text-indigo-500 font-bold mb-2 tracking-tighter uppercase">${n.source || 'EDUCATION'}</div>
+          <h4 class="text-sm font-bold text-gray-900 line-clamp-2 mb-3 group-hover:text-indigo-600 leading-snug">${n.title}</h4>
+          <p class="text-xs text-gray-400 line-clamp-2 leading-relaxed">${n.summary || ''}</p>
+        </a>`).join('') || '<p class="text-xs text-gray-400 p-4 font-bold text-center col-span-3">뉴스가 없습니다.</p>';
+    }
+
+    // 모달 제어
+    function openModal(id) { document.getElementById(`modal-${id}`).classList.add('active'); }
+    function closeModal(id) { 
+      document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+      if(id === 'child') resetChildForm();
+    }
+
+    // 아이 관리
+    function manageChildren() {
+      openModal('child');
+      const list = document.getElementById('manage-child-list');
+      list.innerHTML = children.map(c => `
+        <div class="flex justify-between items-center p-4 bg-gray-50 rounded-2xl border border-gray-100 group">
+          <div class="flex items-center gap-3">
+             <span class="text-xl">${c.gender==='boy'?'👦':'👧'}</span>
+             <span class="font-bold text-gray-800">${c.name} (${c.grade}학년)</span>
+          </div>
+          <div class="flex gap-2">
+            <button onclick='editChild(${JSON.stringify(c).replace(/"/g,"&quot;")})' class="text-xs font-bold text-indigo-600 bg-white px-3 py-1.5 rounded-lg shadow-sm">수정</button>
+            <button onclick="deleteItem('children',${c.id})" class="text-xs font-bold text-red-500 bg-white px-3 py-1.5 rounded-lg shadow-sm">삭제</button>
+          </div>
+        </div>`).join('') || '<p class="text-center text-gray-400 py-4">아이를 먼저 등록해 주세요.</p>';
+    }
+
+    function editChild(c) {
+      document.getElementById('child-form-title').innerText = '아이 정보 수정';
+      document.getElementById('edit-child-id').value = c.id;
+      document.getElementById('edit-child-name').value = c.name;
+      document.getElementById('edit-child-grade').value = c.grade;
+      document.getElementById('edit-child-gender').value = c.gender;
+      document.getElementById('btn-child-reset').classList.remove('hidden');
+      document.getElementById('btn-child-submit').innerText = '정보 수정하기';
+    }
+
+    function resetChildForm() {
+      document.getElementById('child-form-title').innerText = '새 아이 등록';
+      document.getElementById('form-child').reset();
+      document.getElementById('edit-child-id').value = '';
+      document.getElementById('btn-child-reset').classList.add('hidden');
+      document.getElementById('btn-child-submit').innerText = '아이 정보 저장';
+    }
+
+    async function deleteItem(type, id) {
+      if(!confirm('정말 삭제하시겠습니까?')) return;
+      await fetch(`${API}/${type}/${id}`, { method:'DELETE' });
+      closeModal('detail'); await loadFullSummary(currentChildId);
+      if(type === 'children') manageChildren();
+    }
+
+    function showDetail(type, data) {
+      const m = document.getElementById('modal-detail');
+      document.getElementById('detail-title').innerText = data.title;
+      document.getElementById('detail-content').innerHTML = `
+        <div class="space-y-3">
+           <p>📅 <strong>날짜/명칭:</strong> ${data.date || data.due_date || data.subject || ''}</p>
+           <p>⏰ <strong>시간:</strong> ${data.start_time || ''} ${data.end_time ? '~ ' + data.end_time : ''}</p>
+           ${data.description ? `<p class="border-t pt-3 mt-3">${data.description}</p>` : ''}
+           ${data.location ? `<p>📍 <strong>장소:</strong> ${data.location}</p>` : ''}
+           ${data.teacher ? `<p>👩‍🏫 <strong>선생님:</strong> ${data.teacher}</p>` : ''}
+        </div>`;
+      document.getElementById('detail-actions').innerHTML = `<button onclick="deleteItem('${type}s',${data.id})" class="flex-1 bg-red-50 text-red-600 py-4 rounded-2xl font-black shadow-sm order-last">기록 삭제하기</button>`;
+      m.classList.add('active');
+    }
+
+    // 폼 제출 핸들러
+    document.getElementById('form-child').onsubmit = async (e) => {
+      e.preventDefault();
+      const body = Object.fromEntries(new FormData(e.target));
+      const method = body.id ? 'PUT' : 'POST';
+      const url = body.id ? `${API}/children/${body.id}` : `${API}/children`;
+      const res = await fetch(url, { method, headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      if(res.ok) { resetChildForm(); await loadFullSummary(); manageChildren(); }
+    };
+
+    document.getElementById('form-schedule').onsubmit = async (e) => {
+      e.preventDefault();
+      const fd = new FormData(e.target);
+      const data = Object.fromEntries(fd);
+      const days = fd.getAll('days');
+      if(days.length === 0) return alert('요일을 하나 이상 선택해 주세요.');
+      
+      const promises = days.map(day => fetch(`${API}/schedules`, {
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({...data, child_id: currentChildId, day_of_week: parseInt(day), recurring: true})
+      }));
+      
+      const results = await Promise.all(promises);
+      if(results.every(r => r.ok)) {
+        closeModal('schedule'); e.target.reset();
+        await loadFullSummary(currentChildId);
+        alert('시간표가 성공적으로 저장되었습니다!');
+      }
+    };
+
+    document.getElementById('form-event').onsubmit = async (e) => {
+      e.preventDefault();
+      const body = Object.fromEntries(new FormData(e.target));
+      body.child_id = currentChildId;
+      await fetch(`${API}/events`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify(body) });
+      closeModal('event'); e.target.reset(); await loadFullSummary(currentChildId);
+    };
+
+    async function toggleSupply(id, checked) {
+      await fetch(`${API}/supplies/${id}`, { method:'PUT', headers:{'Content-Type':'application/json'}, body:JSON.stringify({is_checked:checked}) });
+      await loadFullSummary(currentChildId);
+    }
+
+    async function refreshNews() {
+      const btn = document.getElementById('news-refresh-btn');
+      btn.classList.add('animate-spin');
+      await fetch(`${API}/news/refresh`);
+      await loadFullSummary(currentChildId);
+      btn.classList.remove('animate-spin');
+    }
+
+    async function filterNews(tag) {
+      const res = await fetch(`${API}/news${tag?`?tags=${tag}`:''}`);
+      const data = await res.json();
+      renderNews(data);
+      document.querySelectorAll('.news-filter').forEach(b => {
+        b.className = `text-[10px] px-2 py-1 rounded-full news-filter ${b.dataset.tag === (tag||'') ? 'bg-indigo-100 text-indigo-600 active' : 'bg-gray-100 text-gray-500'}`;
+      });
+    }
+  </script>
+</body>
+</html>
