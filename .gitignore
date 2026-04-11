@@ -1,3 +1,9 @@
 node_modules/
 *.db
 *.db-journal
+*.log
+*.backup
+*-server.js
+check-*.js
+deploy-*.sh
+server.pid
